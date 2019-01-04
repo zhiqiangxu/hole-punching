@@ -83,6 +83,12 @@ func PunchTCP(timeout time.Duration, so net.Conn, remote string) (ret net.Conn, 
 			return
 		}
 		time.Sleep(time.Microsecond)
+
+		select {
+		case <-ctx.Done():
+			return
+		default:
+		}
 	}
 
 }
