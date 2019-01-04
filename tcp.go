@@ -15,19 +15,21 @@ import (
 
 var (
 	// ErrPunchFailed when punching failed
-	ErrPunchFailed = errors.New("punching failed")
+	ErrPunchFailed  = errors.New("punching failed")
+	ErrInvalidParam = errors.New("invalid parameter")
 )
 
 // PunchTCP tries to punch remote with specified reused local socket
-func PunchTCP(timeout time.Duration, so net.Conn, remote string) (ret net.Conn, retErr error) {
+func PunchTCP(timeout int /*seconds*/, so net.Conn, remote string) (ret net.Conn, retErr error) {
 
+	if timeout <= 0 {
+		return nil, ErrInvalidParam
+	}
 	laddr := so.LocalAddr().String()
 	l, err := reuse.Listen("tcp", laddr)
 	if err != nil {
 		return nil, err
 	}
-
-	start := time.Now()
 
 	ctx, cancelFunc := context.WithCancel(context.Background())
 	var (
@@ -65,8 +67,9 @@ func PunchTCP(timeout time.Duration, so net.Conn, remote string) (ret net.Conn, 
 		}
 	})
 
+	start := time.Now()
 	for {
-		conn, err := reuse.DialWithTimeout("tcp", laddr, remote, time.Microsecond)
+		conn, err := reuse.DialWithTimeout("tcp", laddr, remote, time.Second)
 		if err == nil {
 			lock.Lock()
 			if ret == nil {
@@ -79,10 +82,9 @@ func PunchTCP(timeout time.Duration, so net.Conn, remote string) (ret net.Conn, 
 		}
 
 		fmt.Println("Dial err:", err)
-		if time.Now().After(start.Add(timeout)) {
+		if time.Now().After(start.Add(time.Duration(timeout) * time.Second)) {
 			return
 		}
-		time.Sleep(time.Microsecond)
 
 		select {
 		case <-ctx.Done():
