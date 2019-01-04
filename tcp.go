@@ -18,8 +18,8 @@ var (
 	ErrPunchFailed = errors.New("punching failed")
 )
 
-// PunchTCPByLocalPort tries to punch remote with specified reused local socket
-func PunchTCPByLocalPort(ctx context.Context, so net.Conn, remote string) (ret net.Conn, retErr error) {
+// PunchTCP tries to punch remote with specified reused local socket
+func PunchTCP(ctx context.Context, so net.Conn, remote string) (ret net.Conn, retErr error) {
 
 	laddr := so.LocalAddr()
 	l, err := reuse.Listen("tcp", laddr)
