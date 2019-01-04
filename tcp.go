@@ -21,7 +21,7 @@ var (
 // PunchTCP tries to punch remote with specified reused local socket
 func PunchTCP(timeout time.Duration, so net.Conn, remote string) (ret net.Conn, retErr error) {
 
-	laddr := so.LocalAddr()
+	laddr := so.LocalAddr().String()
 	l, err := reuse.Listen("tcp", laddr)
 	if err != nil {
 		return nil, err
