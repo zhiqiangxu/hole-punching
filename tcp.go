@@ -18,10 +18,10 @@ var (
 	ErrPunchFailed = errors.New("punching failed")
 )
 
-// PunchTCPByLocalPort tries to punch remote with specified local port
-func PunchTCPByLocalPort(ctx context.Context, port uint16, remote string) (ret net.Conn, retErr error) {
+// PunchTCPByLocalPort tries to punch remote with specified reused local socket
+func PunchTCPByLocalPort(ctx context.Context, so net.Conn, remote string) (ret net.Conn, retErr error) {
 
-	laddr := fmt.Sprintf("0.0.0.0:%d", port)
+	laddr := so.LocalAddr()
 	l, err := reuse.Listen("tcp", laddr)
 	if err != nil {
 		return nil, err
@@ -64,7 +64,7 @@ func PunchTCPByLocalPort(ctx context.Context, port uint16, remote string) (ret n
 	})
 
 	for {
-		conn, err := reuse.Dial("tcp", laddr, remote)
+		conn, err := reuse.Dial("tcp", laddr, remote)·
 		if err == nil {
 			lock.Lock()
 			if ret == nil {
