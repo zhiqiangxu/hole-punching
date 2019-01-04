@@ -10,7 +10,7 @@ import (
 
 	"github.com/zhiqiangxu/qrpc"
 
-	reuse "github.com/libp2p/go-reuseport"
+	reuse "github.com/zhiqiangxu/go-reuseport"
 )
 
 var (
@@ -19,7 +19,7 @@ var (
 )
 
 // PunchTCP tries to punch remote with specified reused local socket
-func PunchTCP(ctx context.Context, so net.Conn, remote string) (ret net.Conn, retErr error) {
+func PunchTCP(timeout time.Duration, so net.Conn, remote string) (ret net.Conn, retErr error) {
 
 	laddr := so.LocalAddr()
 	l, err := reuse.Listen("tcp", laddr)
@@ -27,7 +27,9 @@ func PunchTCP(ctx context.Context, so net.Conn, remote string) (ret net.Conn, re
 		return nil, err
 	}
 
-	ctx, cancelFunc := context.WithCancel(ctx)
+	start := time.Now()
+
+	ctx, cancelFunc := context.WithCancel(context.Background())
 	var (
 		lock sync.Mutex
 		wg   sync.WaitGroup
@@ -64,7 +66,7 @@ func PunchTCP(ctx context.Context, so net.Conn, remote string) (ret net.Conn, re
 	})
 
 	for {
-		conn, err := reuse.Dial("tcp", laddr, remote)·
+		conn, err := reuse.DialWithTimeout("tcp", laddr, remote, time.Microsecond)
 		if err == nil {
 			lock.Lock()
 			if ret == nil {
@@ -77,13 +79,10 @@ func PunchTCP(ctx context.Context, so net.Conn, remote string) (ret net.Conn, re
 		}
 
 		fmt.Println("Dial err:", err)
-		time.Sleep(time.Microsecond)
-
-		select {
-		case <-ctx.Done():
+		if time.Now().After(start.Add(timeout)) {
 			return
-		default:
 		}
+		time.Sleep(time.Microsecond)
 	}
 
 }
